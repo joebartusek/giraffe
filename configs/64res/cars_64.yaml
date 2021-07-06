@@ -1,6 +1,6 @@
 data:
-  path: data/comprehensive_cars/images/*.jpg
-  fid_file: data/comprehensive_cars/fid_files/comprehensiveCars_64.npz
+  path: /tigress/jfb4/giraffe/data/comprehensive_cars/images/*.jpg
+  fid_file: /tigress/jfb4/giraffe/data/comprehensive_cars/fid_files/comprehensiveCars_64.npz
   random_crop: True
 model:
   bounding_box_generator_kwargs:
