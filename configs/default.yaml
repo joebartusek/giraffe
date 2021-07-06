@@ -33,7 +33,7 @@ training:
   print_every: 10
   checkpoint_every: 500
   visualize_every: 1000
-  validate_every: 10000
+  validate_every: 10
   backup_every: 1000000
   learning_rate: 0.0005
   learning_rate_d: 0.0001
