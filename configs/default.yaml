@@ -1,7 +1,7 @@
 method: giraffe
 data:
   dataset_name: images
-  path: data/comprehensive_cars/images/*.jpg
+  path: /tigress/jfb4/giraffe/data/comprehensive_cars/images/*.jpg
   classes: []
   img_size: 64
   fid_file: null
