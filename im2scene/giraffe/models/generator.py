@@ -153,9 +153,10 @@ class Generator(nn.Module):
         with np.nditer(z, op_flags=['readwrite']) as it:
             for x in it:
                 x[...] = np.random.uniform(x, x + epsilon, 1).astype(np.float32) * tmp
+        t = torch.from_numpy(z)
         if to_device:
-            z = z.to(self.device)
-        return z
+            t = t.to(self.device)
+        return t
 
     def get_vis_dict(self, batch_size=32):
         vis_dict = {
