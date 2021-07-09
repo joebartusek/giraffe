@@ -146,6 +146,8 @@ class Generator(nn.Module):
             z = z.to(self.device)
         return z
 
+    # non-parametric sampling distribution from "Non-parametric priors for GANs"
+    # by Singh et al. 
     def sample_z_nonpara(self, size, to_device=True, tmp=1.):
         z = np.random.choice(points, size, p=pdf).astype(np.float32)
         with np.nditer(z, op_flags=['readwrite']) as it:
