@@ -9,7 +9,7 @@ import scipy.io as sio
 from scipy.spatial.transform import Rotation as Rot
 from im2scene.camera import get_camera_mat, get_random_pose, get_camera_pose
 
-mat = sio.loadmat('non_param_pdf.mat')
+mat = sio.loadmat('/home/jfb4/SeeingWithSound/code/giraffe/im2scene/giraffe/models/non_param_pdf.mat')
 pdf = np.reshape(mat['X_final'], (1024))
 points = np.linspace(-2, 2, 1024)
 epsilon = 4./1024.
