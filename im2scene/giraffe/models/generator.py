@@ -5,9 +5,14 @@ from im2scene.common import (
     arange_pixels, image_points_to_world, origin_to_world
 )
 import numpy as np
+import scipy.io as sio
 from scipy.spatial.transform import Rotation as Rot
 from im2scene.camera import get_camera_mat, get_random_pose, get_camera_pose
 
+mat = sio.loadmat('non_param_pdf.mat')
+pdf = np.reshape(mat['X_final'], (1024))
+points = np.linspace(-2, 2, 1024)
+epsilon = 4./1024.
 
 class Generator(nn.Module):
     ''' GIRAFFE Generator Class.
@@ -127,7 +132,7 @@ class Generator(nn.Module):
 
         n_boxes = self.get_n_boxes()
 
-        def sample_z(x): return self.sample_z(x, tmp=tmp)
+        def sample_z(x): return self.sample_z_nonpara(x, tmp=tmp)
         z_shape_obj = sample_z((batch_size, n_boxes, z_dim))
         z_app_obj = sample_z((batch_size, n_boxes, z_dim))
         z_shape_bg = sample_z((batch_size, z_dim_bg))
@@ -137,6 +142,15 @@ class Generator(nn.Module):
 
     def sample_z(self, size, to_device=True, tmp=1.):
         z = torch.randn(*size) * tmp
+        if to_device:
+            z = z.to(self.device)
+        return z
+
+    def sample_z_nonpara(self, size, to_device=True, tmp=1.):
+        z = np.random.choice(points, size, p=pdf).astype(np.float32)
+        with np.nditer(z, op_flags=['readwrite']) as it:
+            for x in it:
+                x[...] = np.random.uniform(x, x + epsilon, 1).astype(np.float32) * tmp
         if to_device:
             z = z.to(self.device)
         return z
