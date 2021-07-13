@@ -132,7 +132,7 @@ class Generator(nn.Module):
 
         n_boxes = self.get_n_boxes()
 
-        def sample_z(x): return self.sample_z_nonpara(x, tmp=tmp)
+        def sample_z(x): return self.sample_z_uniform(x, tmp=tmp)
         z_shape_obj = sample_z((batch_size, n_boxes, z_dim))
         z_app_obj = sample_z((batch_size, n_boxes, z_dim))
         z_shape_bg = sample_z((batch_size, z_dim_bg))
@@ -157,6 +157,13 @@ class Generator(nn.Module):
         if to_device:
             t = t.to(self.device)
         return t
+
+    # uniform sampling distribution
+    def sample_z_uniform(self, size, to_device=True, tmp=1.):
+        z = torch.rand(*size) * tmp
+        if to_device:
+            z = z.to(self.device)
+        return z
 
     def get_vis_dict(self, batch_size=32):
         vis_dict = {
