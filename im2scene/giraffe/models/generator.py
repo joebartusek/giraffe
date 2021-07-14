@@ -10,8 +10,8 @@ from scipy.spatial.transform import Rotation as Rot
 from im2scene.camera import get_camera_mat, get_random_pose, get_camera_pose
 
 mat = sio.loadmat('/home/jfb4/SeeingWithSound/code/giraffe/im2scene/giraffe/models/non_param_pdf.mat')
-pdf = np.reshape(mat['X_final'], (1024))
-points = np.linspace(-2, 2, 1024)
+pdf = torch.from_numpy(np.reshape(mat['X_final'], (1024)))
+points = torch.from_numpy(np.linspace(-2, 2, 1024))
 epsilon = 4./1024.
 
 class Generator(nn.Module):
@@ -149,14 +149,12 @@ class Generator(nn.Module):
     # non-parametric sampling distribution from "Non-parametric priors for GANs"
     # by Singh et al. 
     def sample_z_nonpara(self, size, to_device=True, tmp=1.):
-        z = np.random.choice(points, size, p=pdf).astype(np.float32)
-        with np.nditer(z, op_flags=['readwrite']) as it:
-            for x in it:
-                x[...] = np.random.uniform(x, x + epsilon, 1).astype(np.float32) * tmp
-        t = torch.from_numpy(z)
+        idx = pdf.multinomial(num_samples=size, replacement=True)
+        z = points[idx] + torch.rand(size) * epsilon
+        z = z.type(torch.float32)
         if to_device:
-            t = t.to(self.device)
-        return t
+            z = z.to(self.device)
+        return z
 
     # uniform sampling distribution
     def sample_z_uniform(self, size, to_device=True, tmp=1.):
