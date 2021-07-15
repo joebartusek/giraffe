@@ -9,11 +9,6 @@ import scipy.io as sio
 from scipy.spatial.transform import Rotation as Rot
 from im2scene.camera import get_camera_mat, get_random_pose, get_camera_pose
 
-mat = sio.loadmat('/home/jfb4/SeeingWithSound/code/giraffe/im2scene/giraffe/models/non_param_pdf.mat')
-pdf = torch.from_numpy(np.reshape(mat['X_final'], (1024)))
-points = torch.from_numpy(np.linspace(-2, 2, 1024))
-epsilon = 4./1024.
-
 class Generator(nn.Module):
     ''' GIRAFFE Generator Class.
 
@@ -49,7 +44,8 @@ class Generator(nn.Module):
                  fov=49.13,
                  backround_rotation_range=[0., 0.],
                  sample_object_existance=False,
-                 use_max_composition=False, **kwargs):
+                 use_max_composition=False, 
+                 sample_distribution='normal', bins=1024, width=2, **kwargs):
         super().__init__()
         self.device = device
         self.n_ray_samples = n_ray_samples
@@ -65,8 +61,24 @@ class Generator(nn.Module):
         self.z_dim = z_dim
         self.z_dim_bg = z_dim_bg
         self.use_max_composition = use_max_composition
+        self.sample_distribution = sample_distribution
+        self.bins = bins
+        self.width = width
+
+        self.sampling_functions = {
+            'normal': self.sample_z,
+            'non_parametric': self.sample_z_nonparametric,
+            'uniform': self.sample_z_uniform,
+        }
+
+        self.sampling_function = self.sampling_functions[self.sample_distribution]
 
         self.camera_matrix = get_camera_mat(fov=fov).to(device)
+
+        mat = sio.loadmat('/home/jfb4/SeeingWithSound/code/giraffe/im2scene/giraffe/models/non_param_pdf.mat')
+        self.pdf = torch.from_numpy(np.reshape(mat['X_final'], self.bins))
+        self.points = torch.from_numpy(np.linspace(-self.width, self.width, self.bins))
+        self.epsilon = self.width * 2 / self.bins
 
         if decoder is not None:
             self.decoder = decoder.to(device)
@@ -132,7 +144,8 @@ class Generator(nn.Module):
 
         n_boxes = self.get_n_boxes()
 
-        def sample_z(x): return self.sample_z_uniform(x, tmp=tmp)
+        def sample_z(x): return self.sampling_function(x, tmp=tmp)
+
         z_shape_obj = sample_z((batch_size, n_boxes, z_dim))
         z_app_obj = sample_z((batch_size, n_boxes, z_dim))
         z_shape_bg = sample_z((batch_size, z_dim_bg))
@@ -148,9 +161,10 @@ class Generator(nn.Module):
 
     # non-parametric sampling distribution from "Non-parametric priors for GANs"
     # by Singh et al. 
-    def sample_z_nonpara(self, size, to_device=True, tmp=1.):
-        idx = pdf.multinomial(num_samples=size, replacement=True)
-        z = points[idx] + torch.rand(size) * epsilon
+    def sample_z_nonparametric(self, size, to_device=True, tmp=1.):
+        idx = self.pdf.multinomial(num_samples=size, replacement=True)
+        z = self.points[idx] + torch.rand(*size) * self.epsilon
+        z *= tmp
         z = z.type(torch.float32)
         if to_device:
             z = z.to(self.device)

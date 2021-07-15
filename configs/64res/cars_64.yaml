@@ -11,5 +11,8 @@ model:
   generator_kwargs:
     range_v: [0.41667, 0.5]
     fov: 10
+    sampling_distribution: normal
+    bins: 1024
+    width: 2
 training:
   out_dir:  out/cars64
