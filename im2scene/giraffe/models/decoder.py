@@ -9,7 +9,7 @@ from numpy import pi
 class Decoder(nn.Module):
     ''' Decoder class.
 
-    Predicts volume density and color from 3D location, viewing
+    Predicts volume density and color (/feature) from 3D location, viewing
     direction, and latent code z.
 
     Args:
@@ -125,25 +125,39 @@ class Decoder(nn.Module):
                 z_shape = torch.randn(batch_size, self.z_dim).to(p_in.device)
             if z_app is None:
                 z_app = torch.randn(batch_size, self.z_dim).to(p_in.device)
+        
+        # positionally encode query points
         p = self.transform_points(p_in)
+
+        # net = linear(p)
         net = self.fc_in(p)
+
+        # linear(latent shape)
         if z_shape is not None:
             net = net + self.fc_z(z_shape).unsqueeze(1)
+
+        # relu
         net = a(net)
 
         skip_idx = 0
+
+        # linear layers w relus
         for idx, layer in enumerate(self.blocks):
             net = a(layer(net))
             if (idx + 1) in self.skips and (idx < len(self.blocks) - 1):
                 net = net + self.fc_z_skips[skip_idx](z_shape).unsqueeze(1)
                 net = net + self.fc_p_skips[skip_idx](p)
                 skip_idx += 1
+        # density out is single scalar
         sigma_out = self.sigma_out(net).squeeze(-1)
 
+        # feature/color map now computed (from output of last density layer)
         net = self.feat_view(net)
         net = net + self.fc_z_view(z_app).unsqueeze(1)
         if self.use_viewdirs and ray_d is not None:
             ray_d = ray_d / torch.norm(ray_d, dim=-1, keepdim=True)
+            # positionally encode ray directions, interacting with already-positionally-
+            # encoded query points
             ray_d = self.transform_points(ray_d, views=True)
             net = net + self.fc_view(ray_d)
             net = a(net)
