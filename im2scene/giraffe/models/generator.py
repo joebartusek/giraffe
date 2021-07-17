@@ -45,7 +45,7 @@ class Generator(nn.Module):
                  backround_rotation_range=[0., 0.],
                  sample_object_existance=False,
                  use_max_composition=False, 
-                 sample_distribution='normal', bins=1024, width=2, **kwargs):
+                 sampling_distribution='normal', bins=1024, width=2, **kwargs):
         super().__init__()
         self.device = device
         self.n_ray_samples = n_ray_samples
@@ -61,7 +61,7 @@ class Generator(nn.Module):
         self.z_dim = z_dim
         self.z_dim_bg = z_dim_bg
         self.use_max_composition = use_max_composition
-        self.sample_distribution = sample_distribution
+        self.sampling_distribution = sampling_distribution
         self.bins = bins
         self.width = width
 
@@ -71,7 +71,7 @@ class Generator(nn.Module):
             'uniform': self.sample_z_uniform,
         }
 
-        self.sampling_function = self.sampling_functions[self.sample_distribution]
+        self.sampling_function = self.sampling_functions[self.sampling_distribution]
 
         self.camera_matrix = get_camera_mat(fov=fov).to(device)
 
