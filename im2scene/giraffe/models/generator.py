@@ -9,6 +9,8 @@ import scipy.io as sio
 from scipy.spatial.transform import Rotation as Rot
 from im2scene.camera import get_camera_mat, get_random_pose, get_camera_pose
 
+import math
+
 class Generator(nn.Module):
     ''' GIRAFFE Generator Class.
 
@@ -162,9 +164,14 @@ class Generator(nn.Module):
     # non-parametric sampling distribution from "Non-parametric priors for GANs"
     # by Singh et al. 
     def sample_z_nonparametric(self, size, to_device=True, tmp=1.):
-        idx = self.pdf.multinomial(num_samples=size, replacement=True)
-        z = self.points[idx] + torch.rand(*size) * self.epsilon
+        if type(size) is int:
+            num_samples = size
+        if type(size) is tuple:
+            num_samples = math.prod(size)
+        z = self.points[self.pdf.multinomial(num_samples=num_samples, replacement=True)]
+        z += torch.rand(num_samples) * self.epsilon
         z *= tmp
+        z = z.reshape(size)
         z = z.type(torch.float32)
         if to_device:
             z = z.to(self.device)
